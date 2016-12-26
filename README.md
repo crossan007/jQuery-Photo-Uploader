@@ -12,7 +12,7 @@ PhotoUploader detects whether webcam capture is possible.
 
 ### DOM
 
-PhotoUploader requires an empty <div> element on which to bind.
+PhotoUploader requires an empty ```<div>``` element on which to bind.
 
 ### JavaScript
 
