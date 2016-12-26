@@ -10,8 +10,13 @@
     $("#upload-image").on("shown.bs.modal", function () {
       if (canCapture() )
       {
-        startVideo();
+        
       }
+    });
+
+    $("#captureFromWebcam").click(function(){
+      createCapturePreview();
+      startVideo();
     });
   
     $("#upload-image").on("hidden.bs.modal", function() {
@@ -110,6 +115,7 @@
       id:"cameraSelect"
     }).append(
       $("<label>",{ 
+        id: "captureFromWebcam",
         html:'<i class="fa fa-video-camera" style="font-size:64pt" aria-hidden="true"></i><br>Capture from Webcam',
       })
     );
@@ -130,7 +136,7 @@
   function createCapturePreview() 
   {
     var capture = $("<div>",{
-      style:"display:none; text-align: center",
+      style:"text-align: center",
       class:"col-md-12",
       id:"photoCapture"
     }).append(

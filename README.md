@@ -1,6 +1,8 @@
 # jQuery Photo Uploader
 jQuery Plugin for uploading local photos and capturing from a webcam
 
+![plugin preview][preview.png]
+
 ## Run Conditions
 
 PhotoUploader detects whether webcam capture is possible.
