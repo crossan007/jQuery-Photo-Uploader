@@ -1,0 +1,32 @@
+{
+  "name": "jquery-photo-uploader",
+  "version": "1.0.0",
+  "description": "jQuery Plugin for uploading local photos and capturing from a webcam",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/crossan007/jQuery-Photo-Uploader.git"
+  },
+  "keywords": [
+    "HTML5",
+    "WebCam",
+    "Canvas",
+    "Video",
+    "Media",
+    "Upload",
+    "Photo",
+    "Capture"
+  ],
+  "author": "Charles Crossan <crossan007@gmail.com> (http://www.ccrossan.com)",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/crossan007/jQuery-Photo-Uploader/issues"
+  },
+  "homepage": "https://github.com/crossan007/jQuery-Photo-Uploader#readme",
+  "dependencies": {
+    "bootstrap": "^3.3.7",
+    "jquery": "^3.1.1"
+  },
+  "scripts" : {
+    "postinstall" : "cp -R node_modules/bootstrap/dist src/vendor/bootstrap && cp -R node_modules/jquery/dist src/vendor/jquery"
+  }
+}

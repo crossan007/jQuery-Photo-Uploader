@@ -1,0 +1,25 @@
+<html>
+    <head>
+        <link href="vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+    </head>
+    <body>
+        <div id="photo-upload">
+        </div>
+        <h1>Last Captured Image: </h1>
+        <img src="lastImage.png" />
+        <br/>
+        <br/>
+        <button  style="btn btn-primary" id="get-photo">Get Photo</button>
+        <script src="vendor/jquery/jquery.min.js"></script>
+        <script src="vendor/bootstrap/js/bootstrap.min.js"></script>
+        <script src="PhotoUploader.js"></script>
+        <script>
+         window.PhotoUploaderExample = {};
+            window.PhotoUploaderExample.uploader =  $("#photo-upload").PhotoUploader();
+
+            $("#get-photo").click(function(){
+                window.PhotoUploaderExample.uploader.show();
+            })
+        </script>
+    </body>
+</html>
