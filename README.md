@@ -37,3 +37,5 @@ To display a PhotoUploader, simply call the ```show()``` function of the already
 ## Server Side
 
 PhotoUploader will POST the captured / selected image as a Base64 Encoded png to the endpoint defined by the ```url``` option.
+
+

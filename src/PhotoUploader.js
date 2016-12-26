@@ -15,28 +15,30 @@
     });
 
     $("#captureFromWebcam").click(function(){
-      createCapturePreview();
+      $("#previewPane").empty().append(createCapturePreview());
       startVideo();
+       $("#snap").click(function () {
+        snapshotVideo();
+      });
+
+      $("#retake").click(function () {
+        retakeSnapshot();
+      });
     });
   
     $("#upload-image").on("hidden.bs.modal", function() {
      stopVideo();
+     $("#previewPane").empty();
     });
     
-    $("#snap").click(function () {
-     snapshotVideo();
-    });
-
-    $("#retake").click(function () {
-     retakeSnapshot();
-    });
+   
 
     $("#uploadImage").click(function (event) {
       uploadStaticImage();
     });
 
-    $("#fileSelect input[name=file]").change(function() {
-      fileSelectChanged(this)
+    $("#fileSelect input[name=file]").change(function(e) {
+      fileSelectChanged(e)
     });
     
     this.show = function()
@@ -49,8 +51,25 @@
 
   function fileSelectChanged(fileSelect)
   {
-    console.log("Fileselect Changed");
-    
+    console.log(fileSelect);
+    var file = fileSelect.target.files[0]; // FileList object
+
+    // Only process image files.
+    if (!file.type.match('image.*')) {
+      return;
+    }
+
+    $("#previewPane").empty().append( $("<canvas>",{
+      id:"canvas"
+    })
+    .attr("width", parameters.photoWidth)
+    .attr("height", parameters.photoHeight));
+    var img = new Image();
+    img.onload = function() {
+      document.getElementById('canvas').getContext('2d').drawImage(img, 0,0,parameters.photoWidth,parameters.photoHeight);
+    }
+    img.src= URL.createObjectURL(file);
+
   }
   
   function createHeader()
@@ -109,18 +128,17 @@
   {
     if ( canCapture () )
     {
-    var cameraSelect = $("<div>",{
-      class:"col-md-6",
-      style:"text-align: center; border: solid 1px grey; background-color:#eeeeee; min-height:145px",
-      id:"cameraSelect"
-    }).append(
-      $("<label>",{ 
-        id: "captureFromWebcam",
-        html:'<i class="fa fa-video-camera" style="font-size:64pt" aria-hidden="true"></i><br>Capture from Webcam',
-      })
-    );
-
-    return cameraSelect;
+      var cameraSelect = $("<div>",{
+        class:"col-md-6",
+        style:"text-align: center; border: solid 1px grey; background-color:#eeeeee; min-height:145px",
+        id:"cameraSelect"
+      }).append(
+        $("<label>",{ 
+          id: "captureFromWebcam",
+          html:'<i class="fa fa-video-camera" style="font-size:64pt" aria-hidden="true"></i><br>Capture from Webcam',
+        })
+      );
+      return cameraSelect;
     }
     else
     {
@@ -175,6 +193,8 @@
     
   }
   
+  
+
   function createBody()
   {
      var modalBody = $("<div>",{
@@ -188,6 +208,10 @@
           createFileSelect()
         ).append(
           createCameraSelect()
+        )
+    ).append(
+        $("<div>",{class:"row"}).append(
+          $("<div>",{id:"previewPane"})
         )
     );
     
@@ -234,7 +258,7 @@
     
     var modalDialog = $("<div>",{
       id: "photoUploader-dialog",
-      class: "modal-dialog"
+      class: "modal-dialog modal-lg"
     });
     
     var uploadForm = $("<form>",{
@@ -263,7 +287,8 @@
     );
   }
   
-  function startVideo(){
+  function startVideo()
+  {
     // Get access to the camera!
     var constraints = { 
       video: { 
@@ -273,7 +298,6 @@
     };
     navigator.mediaDevices.getUserMedia(constraints)
       .then(function(userCameraStream) {
-        $("#photoUploader-dialog").addClass("modal-lg");
         $("#photoOr").show();
         $("#photoCapture").show();
         // Grab elements, create settings, etc.
@@ -292,8 +316,7 @@
     this.video.src='';
     this.stream.getTracks()[0].stop();
   }
-  
-  
+
   function snapshotVideo()
   {
     this.context.drawImage(this.video,0,0,parameters.photoWidth,parameters.photoHeight);
