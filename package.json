@@ -24,9 +24,10 @@
   "homepage": "https://github.com/crossan007/jQuery-Photo-Uploader#readme",
   "dependencies": {
     "bootstrap": "^3.3.7",
+    "font-awesome": "^4.7.0",
     "jquery": "^3.1.1"
   },
-  "scripts" : {
-    "postinstall" : "cp -R node_modules/bootstrap/dist src/vendor/bootstrap && cp -R node_modules/jquery/dist src/vendor/jquery"
+  "scripts": {
+    "postinstall": "cp -R node_modules/bootstrap/dist src/vendor/bootstrap && cp -R node_modules/jquery/dist src/vendor/jquery && cp -R node_modules/font-awesome src/vendor/font-awesome"
   }
 }

@@ -8,7 +8,10 @@
     this.append(createModal());
     
     $("#upload-image").on("shown.bs.modal", function () {
-      startVideo();
+      if (canCapture() )
+      {
+        startVideo();
+      }
     });
   
     $("#upload-image").on("hidden.bs.modal", function() {
@@ -26,6 +29,10 @@
     $("#uploadImage").click(function (event) {
       uploadStaticImage();
     });
+
+    $("#fileSelect input[name=file]").change(function() {
+      fileSelectChanged(this)
+    });
     
     this.show = function()
     {
@@ -33,6 +40,12 @@
     }
 
     return this;
+  }
+
+  function fileSelectChanged(fileSelect)
+  {
+    console.log("Fileselect Changed");
+    
   }
   
   function createHeader()
@@ -62,42 +75,65 @@
   
   function createFileSelect()
   {
-    var photoSelect = $("<div>",{
-      class:"col-md-12",
-      style:"text-align: center",
-      id:"photoSelect"
+    var fileSelect = $("<div>",{
+      class: function () { if (canCapture() ) { return "col-md-6"; } else { return "col-md-12"}},
+      style:"text-align: center; border: solid 1px grey; background-color:#eeeeee; min-height:145px",
+      id:"fileSelect"
     }).append(
-      $("<p>", {
-        text:"Upload an existing Photo"
-      })
-    ).append(
       $("<input>",{
-        style:"margin: 0 auto",
+        style:"display: none",
         type:"file",
         name:"file",
+        id:"file",
         size:"50"
+      })
+    ).append(
+      $("<label>",{ 
+        for:"file",
+        html:'<i class="fa fa-picture-o" style="font-size:64pt" aria-hidden="true"></i><br/>Upload an existing Photo'
       })
     ).append(
       $("<p>", {
         text:"Max photo size: " + parameters.maxPhotoSize
       })
     );
-    return photoSelect;
-}
+    return fileSelect;
+  }
+
+  function createCameraSelect()
+  {
+    if ( canCapture () )
+    {
+    var cameraSelect = $("<div>",{
+      class:"col-md-6",
+      style:"text-align: center; border: solid 1px grey; background-color:#eeeeee; min-height:145px",
+      id:"cameraSelect"
+    }).append(
+      $("<label>",{ 
+        html:'<i class="fa fa-video-camera" style="font-size:64pt" aria-hidden="true"></i><br>Capture from Webcam',
+      })
+    );
+
+    return cameraSelect;
+    }
+    else
+    {
+      return null;
+    }
+  }
+
+  function showCapture()
+  {
+    console.log("show capture");
+  }
   
-  function createCapture()
+  function createCapturePreview() 
   {
     var capture = $("<div>",{
       style:"display:none; text-align: center",
       class:"col-md-12",
       id:"photoCapture"
     }).append(
-      $("<p>",{
-        text:"Capture a new Image"
-      }) 
-    ).append(
-      $("<br>")
-    ).append(
       $("<video>",{
         id:"video",
         width: parameters.photoWidth,
@@ -144,21 +180,9 @@
     }).append(
         $("<div>",{class:"row"}).append(
           createFileSelect()
+        ).append(
+          createCameraSelect()
         )
-    ).append(
-      $("<div>",{class:"row"}).append(
-        $("<div>",{
-          style:"display:none; text-align: center;",
-          class:"col-md-12",
-          id:"photoOr"
-        }).append($("<p>",{
-          text:"~OR~"
-        }))
-      )
-    ).append(
-     $("<div>",{class:"row"}).append(
-        createCapture()
-      )
     );
     
     return modalBody.append(container);
@@ -235,27 +259,25 @@
   
   function startVideo(){
     // Get access to the camera!
-    if(navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-      var constraints = { 
-        video: { 
-          width: parameters.photoWidth, 
-          height: parameters.photoHeight 
-        } 
-      };
-      navigator.mediaDevices.getUserMedia(constraints)
-        .then(function(userCameraStream) {
-          $("#photoUploader-dialog").addClass("modal-lg");
-          $("#photoOr").show();
-          $("#photoCapture").show();
-          // Grab elements, create settings, etc.
-          this.video = document.getElementById('video');
-          this.stream = userCameraStream;
-          this.canvas = document.getElementById('canvas');
-          this.context = this.canvas.getContext('2d');
-          this.video.src = window.URL.createObjectURL(userCameraStream);
-          this.video.play();
-        });
-    }
+    var constraints = { 
+      video: { 
+        width: parameters.photoWidth, 
+        height: parameters.photoHeight 
+      } 
+    };
+    navigator.mediaDevices.getUserMedia(constraints)
+      .then(function(userCameraStream) {
+        $("#photoUploader-dialog").addClass("modal-lg");
+        $("#photoOr").show();
+        $("#photoCapture").show();
+        // Grab elements, create settings, etc.
+        this.video = document.getElementById('video');
+        this.stream = userCameraStream;
+        this.canvas = document.getElementById('canvas');
+        this.context = this.canvas.getContext('2d');
+        this.video.src = window.URL.createObjectURL(userCameraStream);
+        this.video.play();
+      });
   }
 
   function stopVideo()
@@ -302,11 +324,16 @@
       }
   }
 
+  function canCapture()
+  {
+    return navigator.mediaDevices && navigator.mediaDevices.getUserMedia && window.location.protocol == "https:"
+  }
+
   $.fn.PhotoUploader.defaultParameters = {
     url: "/photo",
     maxPhotoSize: "2MB",
-    photoHeight: 480,
-    photoWidth: 640    
+    photoHeight: 240,
+    photoWidth: 320    
   }
 
 })( jQuery );
