@@ -6,41 +6,12 @@
     
     parameters = $.extend( {}, $.fn.PhotoUploader.defaultParameters, userParameters );
     this.append(createModal());
-    
-    $("#upload-image").on("shown.bs.modal", function () {
-      if (canCapture() )
-      {
-        
-      }
-    });
 
-    $("#captureFromWebcam").click(function(){
-      $("#previewPane").empty().append(createCapturePreview());
-      startVideo();
-       $("#snap").click(function () {
-        snapshotVideo();
-      });
-
-      $("#retake").click(function () {
-        retakeSnapshot();
-      });
-    });
-  
     $("#upload-image").on("hidden.bs.modal", function() {
      stopVideo();
      $("#previewPane").empty();
     });
-    
-   
 
-    $("#uploadImage").click(function (event) {
-      uploadStaticImage();
-    });
-
-    $("#fileSelect input[name=file]").change(function(e) {
-      fileSelectChanged(e)
-    });
-    
     this.show = function()
     {
       $("#upload-image").modal("show");
@@ -110,6 +81,8 @@
         name:"file",
         id:"file",
         size:"50"
+      }).change(function(e) {
+        fileSelectChanged(e)
       })
     ).append(
       $("<label>",{ 
@@ -136,6 +109,12 @@
         $("<label>",{ 
           id: "captureFromWebcam",
           html:'<i class="fa fa-video-camera" style="font-size:64pt" aria-hidden="true"></i><br>Capture from Webcam',
+        }).click(function(){
+          $("#previewPane").empty().append(createCapturePreview());
+          startVideo();
+          $("#snap").click(function () {
+            snapshotVideo();
+          })
         })
       );
       return cameraSelect;
@@ -146,10 +125,6 @@
     }
   }
 
-  function showCapture()
-  {
-    console.log("show capture");
-  }
   
   function createCapturePreview() 
   {
@@ -187,6 +162,8 @@
         id:"retake",
         style:"display:none",
         text:"Re-Take Photo"
+      }).click(function () {
+        retakeSnapshot();
       })
      );
      return capture;
@@ -239,6 +216,8 @@
         "data-dismiss":"modal",
         text: "Upload Image",
 
+      }).click(function (event) {
+        uploadStaticImage();
       })
     );
     
@@ -336,21 +315,18 @@
   
   function uploadStaticImage()
   {
-    if ( ! $('input[type="file"]').val() )
-      {
-        event.preventDefault();
-        var dataURL = this.canvas.toDataURL();
-        $.ajax({
-          method: "POST",
-          url: parameters.url,
-          data: { 
-            imgBase64: dataURL
-          }
-        }).done(function(o) {
-          location.reload();
-          $("#upload-image").modal("hide");
-        });
+    event.preventDefault();
+    var dataURL = this.canvas.toDataURL();
+    $.ajax({
+      method: "POST",
+      url: parameters.url,
+      data: { 
+        imgBase64: dataURL
       }
+    }).done(function(o) {
+      location.reload();
+      $("#upload-image").modal("hide");
+    });
   }
 
   function canCapture()
