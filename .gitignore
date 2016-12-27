@@ -1,3 +1,4 @@
 .vagrant
 node_modules/
 vendor/
+tests/lastImage.png

@@ -31,6 +31,7 @@
 
   function fileSelectChanged(fileSelect)
   {
+    
     var file = fileSelect.target.files[0];
     if (!file.type.match('image.*')) {
       return;
@@ -43,6 +44,7 @@
       }).append(
         canvas
     ));
+    canvas.show();
     var img = new Image();
     img.onload = function() {
       context.drawImage(img, 0,0,parameters.photoWidth,parameters.photoHeight);
@@ -108,7 +110,6 @@
   {
     if ( canCapture () )
     {
-      canvas.hide();
       var cameraSelect = $("<div>",{
         class:"col-md-6",
         id:"cameraSelect"
@@ -117,6 +118,7 @@
           id: "captureFromWebcam",
           html:'<i class="fa fa-video-camera" aria-hidden="true"></i><br>Capture from Webcam',
         }).click(function(){
+          canvas.hide();
           $("#previewPane").empty().append(createCapturePreview());
           startVideo();
           $("#snap").click(function () {
