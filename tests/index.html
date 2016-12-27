@@ -1,7 +1,8 @@
 <html>
     <head>
-        <link href="vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
-        <link href="vendor/font-awesome/css/font-awesome.min.css" rel="stylesheet">
+        <link href="/node_modules/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet">
+        <link href="/node_modules/font-awesome/css/font-awesome.min.css" rel="stylesheet">
+        <link href="/dist/PhotoUploader.css" rel="stylesheet">
     </head>
     <body>
         <div id="photo-upload">
@@ -11,12 +12,12 @@
         <br/>
         <br/>
         <button  style="btn btn-primary" id="get-photo">Get Photo</button>
-        <script src="vendor/jquery/jquery.min.js"></script>
-        <script src="vendor/bootstrap/js/bootstrap.min.js"></script>
-        <script src="PhotoUploader.js"></script>
+        <script src="/node_modules/jquery/dist/jquery.min.js"></script>
+        <script src="/node_modules/bootstrap/dist/js/bootstrap.min.js"></script>
+        <script src="/dist/PhotoUploader.js"></script>
         <script>
          window.PhotoUploaderExample = {};
-            window.PhotoUploaderExample.uploader =  $("#photo-upload").PhotoUploader();
+            window.PhotoUploaderExample.uploader =  $("#photo-upload").PhotoUploader({url: "/tests/photo.php"});
 
             $("#get-photo").click(function(){
                 window.PhotoUploaderExample.uploader.show();

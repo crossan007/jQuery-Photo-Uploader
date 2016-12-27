@@ -30,11 +30,17 @@
       return;
     }
 
-    $("#previewPane").empty().append( $("<canvas>",{
-      id:"canvas"
-    })
-    .attr("width", parameters.photoWidth)
-    .attr("height", parameters.photoHeight));
+    $("#previewPane").empty().append( 
+      $("<div>",{
+        class: "col-md-12",
+        id:"photoPreview"
+      }).append(
+        $("<canvas>",{
+          id:"canvas"
+        })
+        .attr("width", parameters.photoWidth)
+        .attr("height", parameters.photoHeight)
+    ));
     var img = new Image();
     img.onload = function() {
       document.getElementById('canvas').getContext('2d').drawImage(img, 0,0,parameters.photoWidth,parameters.photoHeight);
@@ -72,7 +78,6 @@
   {
     var fileSelect = $("<div>",{
       class: function () { if (canCapture() ) { return "col-md-6"; } else { return "col-md-12"}},
-      style:"text-align: center; border: solid 1px grey; background-color:#eeeeee; min-height:145px",
       id:"fileSelect"
     }).append(
       $("<input>",{
@@ -87,7 +92,7 @@
     ).append(
       $("<label>",{ 
         for:"file",
-        html:'<i class="fa fa-picture-o" style="font-size:64pt" aria-hidden="true"></i><br/>Upload an existing Photo'
+        html:'<i class="fa fa-picture-o" aria-hidden="true"></i><br/>Upload an existing Photo'
       })
     ).append(
       $("<p>", {
@@ -103,12 +108,11 @@
     {
       var cameraSelect = $("<div>",{
         class:"col-md-6",
-        style:"text-align: center; border: solid 1px grey; background-color:#eeeeee; min-height:145px",
         id:"cameraSelect"
       }).append(
         $("<label>",{ 
           id: "captureFromWebcam",
-          html:'<i class="fa fa-video-camera" style="font-size:64pt" aria-hidden="true"></i><br>Capture from Webcam',
+          html:'<i class="fa fa-video-camera" aria-hidden="true"></i><br>Capture from Webcam',
         }).click(function(){
           $("#previewPane").empty().append(createCapturePreview());
           startVideo();
@@ -129,7 +133,6 @@
   function createCapturePreview() 
   {
     var capture = $("<div>",{
-      style:"text-align: center",
       class:"col-md-12",
       id:"photoCapture"
     }).append(
