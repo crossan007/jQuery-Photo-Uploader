@@ -17,7 +17,13 @@
         <script src="/dist/PhotoUploader.js"></script>
         <script>
          window.PhotoUploaderExample = {};
-            window.PhotoUploaderExample.uploader =  $("#photo-upload").PhotoUploader({url: "/tests/photo.php"});
+            window.PhotoUploaderExample.uploader =  $("#photo-upload").PhotoUploader({
+                url: "/tests/photo.php",
+                done: function(d){
+                    console.log(d);
+                    alert("UploadedImage");
+                }
+            });
 
             $("#get-photo").click(function(){
                 window.PhotoUploaderExample.uploader.show();

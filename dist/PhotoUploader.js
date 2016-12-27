@@ -22,10 +22,7 @@
 
   function fileSelectChanged(fileSelect)
   {
-    console.log(fileSelect);
-    var file = fileSelect.target.files[0]; // FileList object
-
-    // Only process image files.
+    var file = fileSelect.target.files[0];
     if (!file.type.match('image.*')) {
       return;
     }
@@ -220,7 +217,7 @@
         text: "Upload Image",
 
       }).click(function (event) {
-        uploadStaticImage();
+        uploadStaticImage(event);
       })
     );
     
@@ -316,7 +313,7 @@
     $(this.video).css("display","");
   }
   
-  function uploadStaticImage()
+  function uploadStaticImage(event)
   {
     event.preventDefault();
     var dataURL = this.canvas.toDataURL();
@@ -327,8 +324,10 @@
         imgBase64: dataURL
       }
     }).done(function(o) {
-      location.reload();
       $("#upload-image").modal("hide");
+      if (parameters.done){
+        parameters.done(o);
+      }
     });
   }
 
