@@ -1,10 +1,9 @@
 (function( $ ) {
-  
-  var parameters ={};
 
+  var parameters ={};
   var canvas = {};
   var context = {};
-  
+
   $.fn.PhotoUploader = function (userParameters) {
     
     parameters = $.extend( {}, $.fn.PhotoUploader.defaultParameters, userParameters );
@@ -27,7 +26,6 @@
     {
       $("#upload-image").modal("show");
     }
-
     return this;
   }
 
@@ -52,7 +50,7 @@
     img.src= URL.createObjectURL(file);
 
   }
-  
+
   function createHeader()
   {
     var modalHeader = $("<div>",{
@@ -77,7 +75,7 @@
         }));
     return modalHeader;
   }
-  
+
   function createFileSelect()
   {
     var fileSelect = $("<div>",{
@@ -134,7 +132,6 @@
     }
   }
 
-  
   function createCapturePreview() 
   {
     var capture = $("<div>",{
@@ -172,8 +169,6 @@
      return capture;
     
   }
-  
-  
 
   function createBody()
   {
