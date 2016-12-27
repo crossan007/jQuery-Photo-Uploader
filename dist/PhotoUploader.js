@@ -1,10 +1,21 @@
 (function( $ ) {
   
   var parameters ={};
+
+  var canvas = {};
+  var context = {};
   
   $.fn.PhotoUploader = function (userParameters) {
     
     parameters = $.extend( {}, $.fn.PhotoUploader.defaultParameters, userParameters );
+    canvas = $("<canvas>",{
+      id:"canvas"
+    })
+    .attr("width", parameters.photoWidth)
+    .attr("height", parameters.photoHeight);
+
+    context = canvas.get(0).getContext("2d");
+
     this.append(createModal());
 
     $("#upload-image").on("hidden.bs.modal", function() {
@@ -32,15 +43,11 @@
         class: "col-md-12",
         id:"photoPreview"
       }).append(
-        $("<canvas>",{
-          id:"canvas"
-        })
-        .attr("width", parameters.photoWidth)
-        .attr("height", parameters.photoHeight)
+        canvas
     ));
     var img = new Image();
     img.onload = function() {
-      document.getElementById('canvas').getContext('2d').drawImage(img, 0,0,parameters.photoWidth,parameters.photoHeight);
+      context.drawImage(img, 0,0,parameters.photoWidth,parameters.photoHeight);
     }
     img.src= URL.createObjectURL(file);
 
@@ -103,6 +110,7 @@
   {
     if ( canCapture () )
     {
+      canvas.hide();
       var cameraSelect = $("<div>",{
         class:"col-md-6",
         id:"cameraSelect"
@@ -140,12 +148,7 @@
         autoplay:true
       })
     ).append(
-      $("<canvas>",{
-        id:"canvas",
-        style:"display:none",
-      })
-        .attr("width", parameters.photoWidth)
-        .attr("height", parameters.photoHeight)
+      canvas
     ).append(
       $("<br>")
     ).append(
@@ -217,7 +220,7 @@
         text: "Upload Image",
 
       }).click(function (event) {
-        uploadStaticImage(event);
+        parameters.uploadImage(event);
       })
     );
     
@@ -282,8 +285,6 @@
         // Grab elements, create settings, etc.
         this.video = document.getElementById('video');
         this.stream = userCameraStream;
-        this.canvas = document.getElementById('canvas');
-        this.context = this.canvas.getContext('2d');
         this.video.src = window.URL.createObjectURL(userCameraStream);
         this.video.play();
       });
@@ -298,8 +299,8 @@
 
   function snapshotVideo()
   {
-    this.context.drawImage(this.video,0,0,parameters.photoWidth,parameters.photoHeight);
-    $(this.canvas).css("display","");
+    context.drawImage(this.video,0,0,parameters.photoWidth,parameters.photoHeight);
+    $(canvas).css("display","");
     $(this.video).css("display","none");
     $("#retake").show();
     $("#snap").hide();
@@ -309,27 +310,11 @@
   {
     $("#retake").hide();
     $("#snap").show();
-    $(this.canvas).css("display","none");
+    $(canvas).css("display","none");
     $(this.video).css("display","");
   }
   
-  function uploadStaticImage(event)
-  {
-    event.preventDefault();
-    var dataURL = this.canvas.toDataURL();
-    $.ajax({
-      method: "POST",
-      url: parameters.url,
-      data: { 
-        imgBase64: dataURL
-      }
-    }).done(function(o) {
-      $("#upload-image").modal("hide");
-      if (parameters.done){
-        parameters.done(o);
-      }
-    });
-  }
+  
 
   function canCapture()
   {
@@ -340,7 +325,24 @@
     url: "/photo",
     maxPhotoSize: "2MB",
     photoHeight: 240,
-    photoWidth: 320    
+    photoWidth: 320,
+    uploadImage: function (event)
+    {
+      event.preventDefault();
+      var dataURL = canvas.get(0).toDataURL();
+      $.ajax({
+        method: "POST",
+        url: parameters.url,
+        data: { 
+          imgBase64: dataURL
+        }
+      }).done(function(o) {
+        $("#upload-image").modal("hide");
+        if (parameters.done){
+          parameters.done(o);
+        }
+      });
+    }
   }
 
 })( jQuery );
