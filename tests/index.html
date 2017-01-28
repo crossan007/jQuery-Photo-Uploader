@@ -19,9 +19,11 @@
          window.PhotoUploaderExample = {};
             window.PhotoUploaderExample.uploader =  $("#photo-upload").PhotoUploader({
                 url: "/tests/photo.php",
+                photoHeight: 400,
+                photoWidth: 400,
                 done: function(d){
                     console.log(d);
-                    alert("UploadedImage");
+                    window.location.reload();
                 }
             });
 

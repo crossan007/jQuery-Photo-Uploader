@@ -3,6 +3,23 @@
   var parameters ={};
   var canvas = {};
   var context = {};
+  var currentImage = {
+    image:{},
+    height:0,
+    width:0,
+    top:0,
+    left:0,
+    right:0,
+    bottom:0,
+  };
+
+  var mouseEvents = {
+    offsetX:0,
+    offsetY:0,
+    startX:0,
+    startY:0,
+    isDragging:0
+  }
 
   $.fn.PhotoUploader = function (userParameters) {
     
@@ -11,7 +28,20 @@
       id:"canvas"
     })
     .attr("width", parameters.photoWidth)
-    .attr("height", parameters.photoHeight);
+    .attr("height", parameters.photoHeight)
+    .mousedown(function(e){
+      handleMouseDown(e);
+    })
+    .mousemove(function(e){
+      handleMouseMove(e);
+    })
+    .mouseup(function(e){
+      handleMouseUp(e);
+    });
+
+    canvasOffset = canvas.offset();
+    mouseEvents.offsetX = canvasOffset.left;
+    mouseEvents.offsetY = canvasOffset.top;
 
     context = canvas.get(0).getContext("2d");
 
@@ -19,7 +49,6 @@
 
     $("#upload-image").on("hidden.bs.modal", function() {
      stopVideo();
-     $("#previewPane").empty();
     });
 
     this.show = function()
@@ -27,30 +56,6 @@
       $("#upload-image").modal("show");
     }
     return this;
-  }
-
-  function fileSelectChanged(fileSelect)
-  {
-    
-    var file = fileSelect.target.files[0];
-    if (!file.type.match('image.*')) {
-      return;
-    }
-
-    $("#previewPane").empty().append( 
-      $("<div>",{
-        class: "col-md-12",
-        id:"photoPreview"
-      }).append(
-        canvas
-    ));
-    canvas.show();
-    var img = new Image();
-    img.onload = function() {
-      context.drawImage(img, 0,0,parameters.photoWidth,parameters.photoHeight);
-    }
-    img.src= URL.createObjectURL(file);
-
   }
 
   function createHeader()
@@ -118,8 +123,9 @@
           id: "captureFromWebcam",
           html:'<i class="fa fa-video-camera" aria-hidden="true"></i><br>Capture from Webcam',
         }).click(function(){
-          canvas.hide();
-          $("#previewPane").empty().append(createCapturePreview());
+          $("#previewPane").hide();
+          $("#capturePane").show();
+          $("#retake").show();
           startVideo();
           $("#snap").click(function () {
             snapshotVideo();
@@ -134,11 +140,12 @@
     }
   }
 
-  function createCapturePreview() 
+  function createCapturePane()
   {
-    var capture = $("<div>",{
+     var capture = $("<div>",{
       class:"col-md-12",
-      id:"photoCapture"
+      id:"capturePane",
+      style:"display:none; text-align: center"
     }).append(
       $("<video>",{
         id:"video",
@@ -146,8 +153,6 @@
         height: parameters.photoHeight,
         autoplay:true
       })
-    ).append(
-      canvas
     ).append(
       $("<br>")
     ).append(
@@ -157,6 +162,22 @@
         id:"snap",
         text:"Snap Photo"
       })
+    );
+     return capture;
+  }
+
+  function createPreviewPane() 
+  {
+    var capture = $("<div>",{
+      class:"col-md-12",
+      id:"previewPane",
+      style:"display: none; text-align: center"
+    }).append(
+      canvas
+    ).append(
+      $("<br>")
+    ).append(
+      createEditControls()
     ).append(
       $("<button>",{
         class:"btn btn-warning",
@@ -170,6 +191,38 @@
      );
      return capture;
     
+  }
+
+  function createEditControls()
+  {
+    var editControls = $("<div>" ,{
+      id:"editControls"
+    });
+
+    editControls.append(
+      $("<button>",{
+        class:"btn",
+        type:"button",
+        id:"shrink",
+        text:"-"
+      }).click(function (){
+          shrinkImage();
+        })
+      
+    ).append(
+      $("<button>",{
+        class:"btn",
+        type:"button",
+        id:"grow",
+        text:"+"
+      }).click(function (){
+          growImage();
+        })
+    )
+
+    return editControls;
+
+
   }
 
   function createBody()
@@ -188,7 +241,7 @@
         )
     ).append(
         $("<div>",{class:"row"}).append(
-          $("<div>",{id:"previewPane"})
+          $("<div>",{id:"imageArea"}).append(createCapturePane()).append(createPreviewPane())
         )
     );
     
@@ -294,22 +347,118 @@
     this.stream.getTracks()[0].stop();
   }
 
-  function snapshotVideo()
-  {
-    context.drawImage(this.video,0,0,parameters.photoWidth,parameters.photoHeight);
-    $(canvas).css("display","");
-    $(this.video).css("display","none");
-    $("#retake").show();
-    $("#snap").hide();
-  }
-  
   function retakeSnapshot()
   {
-    $("#retake").hide();
-    $("#snap").show();
-    $(canvas).css("display","none");
-    $(this.video).css("display","");
+    this.video.play();
+    $("#previewPane").hide();
+    $("#capturePane").show();
   }
+
+  function snapshotVideo()
+  {
+    this.video.pause();
+    currentImage.image= this.video;
+    currentImage.width = this.video.videoWidth;
+    currentImage.height = this.video.videoHeight;
+    calcEdges();
+    updateCanvas();
+    $("#capturePane").hide();
+    $("#previewPane").show();
+  }
+
+  function fileSelectChanged(fileSelect)
+  {
+    
+    var file = fileSelect.target.files[0];
+    fileSelect.target.files=null;
+    if (!file.type.match('image.*')) {
+      return;
+    }
+
+    $("#retake").hide();
+    $("#previewPane").show();
+    
+    
+    currentImage.image = new Image();
+    currentImage.image.onload = function() {
+      currentImage.height = currentImage.image.height;
+      currentImage.width = currentImage.image.width;
+      calcEdges();
+      updateCanvas();
+      canvas.show();
+    }
+    currentImage.image.src= URL.createObjectURL(file);
+
+  }
+
+  function calcEdges()
+  {
+   currentImage.right=currentImage.left+currentImage.width;
+   currentImage.bottom=currentImage.top+currentImage.height;
+   
+  }
+
+  function handleMouseUp (e)
+  {
+      mouseEvents.isDragging=0;
+     
+  }
+
+  function handleMouseDown (e)
+  {
+    mouseEvents.isDragging=1;
+    mouseEvents.startX = parseInt(e.clientX -  mouseEvents.offsetX);
+    mouseEvents.startY = parseInt(e.clientY - mouseEvents.offsetY);
+  }
+
+  function handleMouseMove(e)
+  {
+    if ( mouseEvents.isDragging)
+    {
+      dX = parseInt(e.clientX) - mouseEvents.startX -  mouseEvents.offsetX;
+      dY = parseInt(e.clientY) - mouseEvents.startY -  mouseEvents.offsetY;
+      console.log("dX: " + dX+" dY: "+dY);
+      currentImage.top += dY;
+      currentImage.bottom += dY;
+      currentImage.left += dX;
+      currentImage.right += dX;
+      mouseEvents.startX = parseInt(e.clientX);
+      mouseEvents.startY = parseInt(e.clientY);
+      updateCanvas();
+    }
+  }
+
+  function shrinkImage()
+  {
+    currentImage.width *= .90;
+    currentImage.height *= .90;
+    calcEdges();
+    updateCanvas();
+  }
+
+  function growImage()
+  {
+    currentImage.width *= 1.1;
+    currentImage.height *= 1.1;
+    calcEdges();
+    updateCanvas();
+  }
+  
+  function updateCanvas()
+  {
+    console.log(currentImage);
+    context.clearRect(0, 0, parameters.photoWidth, parameters.photoHeight);
+    context.drawImage(currentImage.image, currentImage.left, currentImage.top,currentImage.width,currentImage.height);
+    context.beginPath();
+    context.moveTo(currentImage.left, currentImage.top);
+    context.lineTo(currentImage.right, currentImage.top);
+    context.lineTo(currentImage.right, currentImage.bottom);
+    context.lineTo(currentImage.left, currentImage.bottom);
+    context.closePath();
+    context.stroke();
+    
+  }
+  
   
   
 
