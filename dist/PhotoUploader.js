@@ -377,8 +377,7 @@
 
     $("#retake").hide();
     $("#previewPane").show();
-    
-    
+
     currentImage.image = new Image();
     currentImage.image.onload = function() {
       currentImage.height = currentImage.image.height;
