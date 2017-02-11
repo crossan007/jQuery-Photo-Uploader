@@ -1,6 +1,6 @@
 {
   "name": "jquery-photo-uploader",
-  "version": "1.0.6",
+  "version": "1.0.7",
   "description": "jQuery Plugin for uploading local photos and capturing from a webcam",
   "repository": {
     "type": "git",
@@ -23,7 +23,7 @@
   },
   "homepage": "https://github.com/crossan007/jQuery-Photo-Uploader#readme",
   "devDependencies": {
-    "minifier" : "0.8.1"
+    "minifier": "0.8.1"
   },
   "dependencies": {
     "bootstrap": "^3.3.7",
