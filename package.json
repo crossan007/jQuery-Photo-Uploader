@@ -22,6 +22,9 @@
     "url": "https://github.com/crossan007/jQuery-Photo-Uploader/issues"
   },
   "homepage": "https://github.com/crossan007/jQuery-Photo-Uploader#readme",
+  "devDependencies": {
+    "minifier" : "0.8.1"
+  },
   "dependencies": {
     "bootstrap": "^3.3.7",
     "font-awesome": "^4.7.0",

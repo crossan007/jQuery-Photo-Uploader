@@ -376,6 +376,8 @@
     }
 
     $("#retake").hide();
+    $("#capturePane").hide();
+    stopVideo();
     $("#previewPane").show();
 
     currentImage.image = new Image();
@@ -416,7 +418,6 @@
     {
       dX = parseInt(e.clientX) - mouseEvents.startX -  mouseEvents.offsetX;
       dY = parseInt(e.clientY) - mouseEvents.startY -  mouseEvents.offsetY;
-      console.log("dX: " + dX+" dY: "+dY);
       currentImage.top += dY;
       currentImage.bottom += dY;
       currentImage.left += dX;
@@ -445,7 +446,6 @@
   
   function updateCanvas()
   {
-    console.log(currentImage);
     context.clearRect(0, 0, parameters.photoWidth, parameters.photoHeight);
     context.drawImage(currentImage.image, currentImage.left, currentImage.top,currentImage.width,currentImage.height);
     context.beginPath();
@@ -481,6 +481,7 @@
         data: { 
           imgBase64: dataURL
         }
+        
       }).done(function(o) {
         $("#upload-image").modal("hide");
         if (parameters.done){
