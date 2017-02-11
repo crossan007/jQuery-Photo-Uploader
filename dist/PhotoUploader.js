@@ -360,6 +360,7 @@
     currentImage.image= this.video;
     currentImage.width = this.video.videoWidth;
     currentImage.height = this.video.videoHeight;
+    fitImage();
     calcEdges();
     updateCanvas();
     $("#capturePane").hide();
@@ -384,6 +385,7 @@
     currentImage.image.onload = function() {
       currentImage.height = currentImage.image.height;
       currentImage.width = currentImage.image.width;
+      fitImage();
       calcEdges();
       updateCanvas();
       canvas.show();
@@ -396,7 +398,24 @@
   {
    currentImage.right=currentImage.left+currentImage.width;
    currentImage.bottom=currentImage.top+currentImage.height;
-   
+  }
+
+  function fitImage()
+  {
+    if ( currentImage.width >  parameters.photoWidth)
+    {
+      //if the image is wider than the user asked for
+      ar = currentImage.height / currentImage.width;
+      currentImage.width=parameters.photoWidth;
+      currentImage.height = currentImage.width * ar;
+    }
+    else if ( currentImage.height > parameters.photoHeight)
+    {
+      //if the image is taller than the user asked for
+      ar = currentImage.width / currentImage.height;
+      currentImage.height=parameters.photoHeight;
+      currentImage.width = currentImage.height * ar;
+    }
   }
 
   function handleMouseUp (e)
@@ -481,7 +500,6 @@
         data: { 
           imgBase64: dataURL
         }
-        
       }).done(function(o) {
         $("#upload-image").modal("hide");
         if (parameters.done){
