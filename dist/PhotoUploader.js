@@ -25,7 +25,8 @@
     
     parameters = $.extend( {}, $.fn.PhotoUploader.defaultParameters, userParameters );
     canvas = $("<canvas>",{
-      id:"canvas"
+      id:"canvas",
+      style:"border: 1px solid black"
     })
     .attr("width", parameters.photoWidth)
     .attr("height", parameters.photoHeight)
@@ -342,9 +343,13 @@
 
   function stopVideo()
   {
-    this.video.pause();
-    this.video.src='';
-    this.stream.getTracks()[0].stop();
+    if (this.stream)
+    {
+      this.video.pause();
+      this.video.src='';
+      this.stream.getTracks()[0].stop();
+    }
+   
   }
 
   function retakeSnapshot()
