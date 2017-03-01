@@ -1,44 +1,48 @@
-(function( $ ) {
+(function ($) {
 
-  var parameters ={};
+  var parameters = {};
   var canvas = {};
   var context = {};
+
+  var camera = {
+    deviceIds: [],
+    constraints: {
+      video: {
+        width: parameters.photoWidth,
+        height: parameters.photoHeight
+      }
+    }
+  };
+
   var currentImage = {
-    image:{},
-    height:0,
-    width:0,
-    top:0,
-    left:0,
-    right:0,
-    bottom:0,
+    image: {},
+    height: 0,
+    width: 0,
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0
   };
 
   var mouseEvents = {
-    offsetX:0,
-    offsetY:0,
-    startX:0,
-    startY:0,
-    isDragging:0
-  }
+    offsetX: 0,
+    offsetY: 0,
+    startX: 0,
+    startY: 0,
+    isDragging: 0
+  };
 
   $.fn.PhotoUploader = function (userParameters) {
-    
-    parameters = $.extend( {}, $.fn.PhotoUploader.defaultParameters, userParameters );
-    canvas = $("<canvas>",{
-      id:"canvas",
-      style:"border: 1px solid black"
+    parameters = $.extend({}, $.fn.PhotoUploader.defaultParameters, userParameters);
+    canvas = $("<canvas>", {
+      id: "canvas",
+      style: "border: 1px solid black"
     })
-    .attr("width", parameters.photoWidth)
-    .attr("height", parameters.photoHeight)
-    .mousedown(function(e){
-      handleMouseDown(e);
-    })
-    .mousemove(function(e){
-      handleMouseMove(e);
-    })
-    .mouseup(function(e){
-      handleMouseUp(e);
-    });
+      .attr("width", parameters.photoWidth)
+      .attr("height", parameters.photoHeight)
+      .mousedown(handleMouseDown)
+      .mousemove(handleMouseMove)
+      .mouseup(handleMouseUp);
 
     canvasOffset = canvas.offset();
     mouseEvents.offsetX = canvasOffset.left;
@@ -48,82 +52,83 @@
 
     this.append(createModal());
 
-    $("#upload-image").on("hidden.bs.modal", function() {
-     stopVideo();
+    $("#upload-image").on("hidden.bs.modal", function () {
+      stopVideo();
     });
 
-    this.show = function()
-    {
+    this.show = function () {
       $("#upload-image").modal("show");
-    }
+    };
     return this;
-  }
+  };
 
-  function createHeader()
-  {
-    var modalHeader = $("<div>",{
-      class:"modal-header"
+  function createHeader() {
+    var modalHeader = $("<div>", {
+      class: "modal-header"
     });
-    
+
     modalHeader.append(
       $("<button>", {
-        type:"button",
-        class:"close",
-        "data-dismiss":"modal",
+        type: "button",
+        class: "close",
+        "data-dismiss": "modal",
         "aria-label": "Close"
       }).append(
-        $("<span>",{
-           "aria-hidden":"true",
-          html:"&times;"
-      }))).append(
-        $("<h4>",{
-            class:"modal-title",
-            id:"upload-Image-label",
-            text: "Upload Photo"
-        }));
+        $("<span>", {
+          "aria-hidden": "true",
+          html: "&times;"
+        }))).append(
+      $("<h4>", {
+        class: "modal-title",
+        id: "upload-Image-label",
+        text: "Upload Photo"
+      }));
     return modalHeader;
   }
 
-  function createFileSelect()
-  {
-    var fileSelect = $("<div>",{
-      class: function () { if (canCapture() ) { return "col-md-6"; } else { return "col-md-12"}},
-      id:"fileSelect"
+  function createFileSelect() {
+    var fileSelect = $("<div>", {
+      class: function () {
+        if (canCapture()) {
+          return "col-md-6";
+        } else {
+          return "col-md-12"
+        }
+      },
+      id: "fileSelect"
     }).append(
-      $("<input>",{
-        style:"display: none",
-        type:"file",
-        name:"file",
-        id:"file",
-        size:"50"
-      }).change(function(e) {
+      $("<input>", {
+        style: "display: none",
+        type: "file",
+        name: "file",
+        id: "file",
+        size: "50"
+      }).change(function (e) {
         fileSelectChanged(e)
       })
     ).append(
-      $("<label>",{ 
-        for:"file",
-        html:'<i class="fa fa-picture-o" aria-hidden="true"></i><br/>Upload an existing Photo'
+      $("<label>", {
+        for: "file",
+        html: '<i class="fa fa-picture-o" aria-hidden="true"></i><br/>Upload an existing Photo'
       })
     ).append(
       $("<p>", {
-        text:"Max photo size: " + parameters.maxPhotoSize
+        text: "Max photo size: " + parameters.maxPhotoSize
       })
     );
     return fileSelect;
   }
 
-  function createCameraSelect()
-  {
-    if ( canCapture () )
-    {
-      var cameraSelect = $("<div>",{
-        class:"col-md-6",
-        id:"cameraSelect"
+  function createCameraSelect() {
+    if (canCapture()) {
+      var cameraSelect = $("<div>", {
+        class: "col-md-6",
+        id: "cameraSelect"
       }).append(
-        $("<label>",{ 
+        $("<label>", {
           id: "captureFromWebcam",
-          html:'<i class="fa fa-video-camera" aria-hidden="true"></i><br>Capture from Webcam',
-        }).click(function(){
+          html: '<i class="fa fa-video-camera" aria-hidden="true"></i><br>Capture from Webcam',
+        }).click(function () {
           $("#previewPane").hide();
           $("#capturePane").show();
           $("#retake").show();
@@ -135,44 +140,43 @@
       );
       return cameraSelect;
     }
-    else
-    {
+    else {
       return null;
     }
   }
 
-  function createCapturePane()
-  {
-     var capture = $("<div>",{
-      class:"col-md-12",
-      id:"capturePane",
-      style:"display:none; text-align: center"
+  function createCapturePane() {
+    var capture = $("<div>", {
+      class: "row",
+      id: "capturePane",
+      style: "display:none; text-align: center"
     }).append(
-      $("<video>",{
-        id:"video",
+      $("<video>", {
+        id: "video",
         width: parameters.photoWidth,
         height: parameters.photoHeight,
-        autoplay:true
+        autoplay: true
       })
     ).append(
       $("<br>")
     ).append(
-      $("<button>",{
-        class:"btn btn-primary",
-        type:"button",
-        id:"snap",
-        text:"Snap Photo"
+      createCameraChooser()
+    ).append(
+      $("<button>", {
+        class: "btn btn-primary",
+        type: "button",
+        id: "snap",
+        text: "Snap Photo"
       })
     );
-     return capture;
+    return capture;
   }
 
-  function createPreviewPane() 
-  {
-    var capture = $("<div>",{
-      class:"col-md-12",
-      id:"previewPane",
-      style:"display: none; text-align: center"
+  function createPreviewPane() {
+    var capture = $("<div>", {
+      class: "col-md-12",
+      id: "previewPane",
+      style: "display: none; text-align: center"
     }).append(
       canvas
     ).append(
@@ -180,133 +184,172 @@
     ).append(
       createEditControls()
     ).append(
-      $("<button>",{
-        class:"btn btn-warning",
-        type:"button",
-        id:"retake",
-        style:"display:none",
-        text:"Re-Take Photo"
+      $("<br>")
+    ).append(
+      $("<button>", {
+        class: "btn btn-warning",
+        type: "button",
+        id: "retake",
+        style: "display:none",
+        text: "Re-Take Photo"
       }).click(function () {
         retakeSnapshot();
       })
-     );
-     return capture;
-    
+    );
+    return capture;
+
   }
 
-  function createEditControls()
-  {
-    var editControls = $("<div>" ,{
-      id:"editControls"
+
+  function createCameraChooser() {
+    var cameraChooser = $("<button>", {
+      class: 'btn btn-default',
+      type: 'button',
+      id: 'switcher',
+      text: 'Switch Camera'
+    });
+
+    navigator.mediaDevices.enumerateDevices().then(function (devices) {
+      for (var i = 0; i < devices.length; i++) {
+        if (devices[i].kind !== 'videoinput') {
+          continue;
+        }
+        camera.deviceIds.push(devices[i].deviceId);
+      }
+
+      if (camera.deviceIds.length > 1) {
+        camera.selectedDevice = 0;
+
+        cameraChooser.on('click', function () {
+          if (camera.selectedDevice === camera.deviceIds.length - 1) {
+            camera.selectedDevice = 0;
+          } else {
+            camera.selectedDevice++;
+          }
+
+          camera.constraints.video.deviceId =
+            camera.deviceIds[camera.selectedDevice];
+
+          startVideo();
+        });
+
+      } else {
+        cameraChooser.hide();
+      }
+    });
+
+    return cameraChooser;
+  }
+
+  function createEditControls() {
+    var editControls = $("<div>", {
+      id: "editControls"
     });
 
     editControls.append(
-      $("<button>",{
-        class:"btn",
-        type:"button",
-        id:"shrink",
-        text:"-"
-      }).click(function (){
-          shrinkImage();
-        })
-      
+      $("<button>", {
+        class: "btn",
+        type: "button",
+        id: "shrink",
+        text: "-"
+      }).click(function () {
+        shrinkImage();
+      })
     ).append(
-      $("<button>",{
-        class:"btn",
-        type:"button",
-        id:"grow",
-        text:"+"
-      }).click(function (){
-          growImage();
-        })
-    )
+      $("<button>", {
+        class: "btn",
+        type: "button",
+        id: "grow",
+        text: "+"
+      }).click(function () {
+        growImage();
+      })
+    );
 
     return editControls;
 
 
   }
 
-  function createBody()
-  {
-     var modalBody = $("<div>",{
-      class:"modal-body"
+  function createBody() {
+    var modalBody = $("<div>", {
+      class: "modal-body"
     });
-    
-    var container = $("<div>",{
-      class:"container-fluid"
+
+    var container = $("<div>", {
+      class: "container-fluid"
     }).append(
-        $("<div>",{class:"row"}).append(
-          createFileSelect()
-        ).append(
-          createCameraSelect()
-        )
+      $("<div>", {class: "row"}).append(
+        createFileSelect()
+      ).append(
+        createCameraSelect()
+      )
     ).append(
-        $("<div>",{class:"row"}).append(
-          $("<div>",{id:"imageArea"}).append(createCapturePane()).append(createPreviewPane())
-        )
+      $("<div>", {class: "row"}).append(
+        $("<div>", {id: "imageArea"})
+          .append(createCapturePane())
+          .append(createPreviewPane())
+      )
     );
-    
+
     return modalBody.append(container);
   }
-  
-  function createFooter()
-  {
-    var modalFooter = $("<div>",{
-      class:"modal-footer"
+
+  function createFooter() {
+    var modalFooter = $("<div>", {
+      class: "modal-footer"
     });
-    
+
     modalFooter.append(
-      $("<button>",{
-        type:"button",
-        class:"btn btn-default",
-        "data-dismiss":"modal",
+      $("<button>", {
+        type: "button",
+        class: "btn btn-default",
+        "data-dismiss": "modal",
         text: "Close"
       })
     ).append(
-      $("<input>",{
-        id:"uploadImage",
-        type:"submit",
-        class:"btn btn-primary",
-        "data-dismiss":"modal",
-        text: "Upload Image",
+      $("<input>", {
+        id: "uploadImage",
+        type: "submit",
+        class: "btn btn-primary",
+        "data-dismiss": "modal",
+        text: "Upload Image"
 
       }).click(function (event) {
         parameters.uploadImage(event);
       })
     );
-    
+
     return modalFooter;
   }
-  
-  function createModal()
-  {
-    var modal = $("<div>",{
+
+  function createModal() {
+    var modal = $("<div>", {
       class: "modal fade",
       id: "upload-image",
       tabindex: "-1",
       role: "dialog",
       "aria-labelledby": "upload-Image-label",
-      "aria-hidden":  "true"
+      "aria-hidden": "true"
     });
-    
-    var modalDialog = $("<div>",{
+
+    var modalDialog = $("<div>", {
       id: "photoUploader-dialog",
       class: "modal-dialog modal-lg"
     });
-    
-    var uploadForm = $("<form>",{
-      action:"#",
+
+    var uploadForm = $("<form>", {
+      action: "#",
       method: "POST",
-      enctype:"multipart/form-data",
-      id:"UploadForm"
+      enctype: "multipart/form-data",
+      id: "UploadForm"
     });
-    
-    var modalContent = $("<div>",{
-      class:"modal-content"
+
+    var modalContent = $("<div>", {
+      class: "modal-content"
     });
     return modal.append(
       modalDialog.append(
-      
         uploadForm.append(
           modalContent.append(
             createHeader()
@@ -315,22 +358,15 @@
           ).append(
             createFooter()
           )
-        )        
+        )
       )
     );
   }
-  
-  function startVideo()
-  {
+
+  function startVideo() {
     // Get access to the camera!
-    var constraints = { 
-      video: { 
-        width: parameters.photoWidth, 
-        height: parameters.photoHeight 
-      } 
-    };
-    navigator.mediaDevices.getUserMedia(constraints)
-      .then(function(userCameraStream) {
+    navigator.mediaDevices.getUserMedia(camera.constraints)
+      .then(function (userCameraStream) {
         $("#photoOr").show();
         $("#photoCapture").show();
         // Grab elements, create settings, etc.
@@ -341,28 +377,24 @@
       });
   }
 
-  function stopVideo()
-  {
-    if (this.stream)
-    {
+  function stopVideo() {
+    if (this.stream) {
       this.video.pause();
-      this.video.src='';
+      this.video.src = '';
       this.stream.getTracks()[0].stop();
     }
-   
+
   }
 
-  function retakeSnapshot()
-  {
+  function retakeSnapshot() {
     this.video.play();
     $("#previewPane").hide();
     $("#capturePane").show();
   }
 
-  function snapshotVideo()
-  {
+  function snapshotVideo() {
     this.video.pause();
-    currentImage.image= this.video;
+    currentImage.image = this.video;
     currentImage.width = this.video.videoWidth;
     currentImage.height = this.video.videoHeight;
     fitImage();
@@ -372,11 +404,10 @@
     $("#previewPane").show();
   }
 
-  function fileSelectChanged(fileSelect)
-  {
-    
+  function fileSelectChanged(fileSelect) {
+
     var file = fileSelect.target.files[0];
-    fileSelect.target.files=null;
+    fileSelect.target.files = null;
     if (!file.type.match('image.*')) {
       return;
     }
@@ -387,61 +418,52 @@
     $("#previewPane").show();
 
     currentImage.image = new Image();
-    currentImage.image.onload = function() {
+    currentImage.image.onload = function () {
       currentImage.height = currentImage.image.height;
       currentImage.width = currentImage.image.width;
       fitImage();
       calcEdges();
       updateCanvas();
       canvas.show();
-    }
-    currentImage.image.src= URL.createObjectURL(file);
+    };
+    currentImage.image.src = URL.createObjectURL(file);
 
   }
 
-  function calcEdges()
-  {
-   currentImage.right=currentImage.left+currentImage.width;
-   currentImage.bottom=currentImage.top+currentImage.height;
+  function calcEdges() {
+    currentImage.right = currentImage.left + currentImage.width;
+    currentImage.bottom = currentImage.top + currentImage.height;
   }
 
-  function fitImage()
-  {
-    if ( currentImage.width >  parameters.photoWidth)
-    {
+  function fitImage() {
+    if (currentImage.width > parameters.photoWidth) {
       //if the image is wider than the user asked for
       ar = currentImage.height / currentImage.width;
-      currentImage.width=parameters.photoWidth;
+      currentImage.width = parameters.photoWidth;
       currentImage.height = currentImage.width * ar;
     }
-    else if ( currentImage.height > parameters.photoHeight)
-    {
+    else if (currentImage.height > parameters.photoHeight) {
       //if the image is taller than the user asked for
       ar = currentImage.width / currentImage.height;
-      currentImage.height=parameters.photoHeight;
+      currentImage.height = parameters.photoHeight;
       currentImage.width = currentImage.height * ar;
     }
   }
 
-  function handleMouseUp (e)
-  {
-      mouseEvents.isDragging=0;
-     
+  function handleMouseUp(e) {
+    mouseEvents.isDragging = 0;
   }
 
-  function handleMouseDown (e)
-  {
-    mouseEvents.isDragging=1;
-    mouseEvents.startX = parseInt(e.clientX -  mouseEvents.offsetX);
+  function handleMouseDown(e) {
+    mouseEvents.isDragging = 1;
+    mouseEvents.startX = parseInt(e.clientX - mouseEvents.offsetX);
     mouseEvents.startY = parseInt(e.clientY - mouseEvents.offsetY);
   }
 
-  function handleMouseMove(e)
-  {
-    if ( mouseEvents.isDragging)
-    {
-      dX = parseInt(e.clientX) - mouseEvents.startX -  mouseEvents.offsetX;
-      dY = parseInt(e.clientY) - mouseEvents.startY -  mouseEvents.offsetY;
+  function handleMouseMove(e) {
+    if (mouseEvents.isDragging) {
+      dX = parseInt(e.clientX) - mouseEvents.startX - mouseEvents.offsetX;
+      dY = parseInt(e.clientY) - mouseEvents.startY - mouseEvents.offsetY;
       currentImage.top += dY;
       currentImage.bottom += dY;
       currentImage.left += dX;
@@ -452,26 +474,23 @@
     }
   }
 
-  function shrinkImage()
-  {
+  function shrinkImage() {
     currentImage.width *= .90;
     currentImage.height *= .90;
     calcEdges();
     updateCanvas();
   }
 
-  function growImage()
-  {
+  function growImage() {
     currentImage.width *= 1.1;
     currentImage.height *= 1.1;
     calcEdges();
     updateCanvas();
   }
-  
-  function updateCanvas()
-  {
+
+  function updateCanvas() {
     context.clearRect(0, 0, parameters.photoWidth, parameters.photoHeight);
-    context.drawImage(currentImage.image, currentImage.left, currentImage.top,currentImage.width,currentImage.height);
+    context.drawImage(currentImage.image, currentImage.left, currentImage.top, currentImage.width, currentImage.height);
     context.beginPath();
     context.moveTo(currentImage.left, currentImage.top);
     context.lineTo(currentImage.right, currentImage.top);
@@ -479,14 +498,11 @@
     context.lineTo(currentImage.left, currentImage.bottom);
     context.closePath();
     context.stroke();
-    
-  }
-  
-  
-  
 
-  function canCapture()
-  {
+  }
+
+
+  function canCapture() {
     return navigator.mediaDevices && navigator.mediaDevices.getUserMedia && window.location.protocol == "https:"
   }
 
@@ -495,23 +511,22 @@
     maxPhotoSize: "2MB",
     photoHeight: 240,
     photoWidth: 320,
-    uploadImage: function (event)
-    {
+    uploadImage: function (event) {
       event.preventDefault();
       var dataURL = canvas.get(0).toDataURL();
       $.ajax({
         method: "POST",
         url: parameters.url,
-        data: { 
+        data: {
           imgBase64: dataURL
         }
-      }).done(function(o) {
+      }).done(function (o) {
         $("#upload-image").modal("hide");
-        if (parameters.done){
+        if (parameters.done) {
           parameters.done(o);
         }
       });
     }
   }
 
-})( jQuery );
+})(jQuery);
