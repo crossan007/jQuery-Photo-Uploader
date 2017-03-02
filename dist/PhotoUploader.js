@@ -36,13 +36,17 @@
     parameters = $.extend({}, $.fn.PhotoUploader.defaultParameters, userParameters);
     canvas = $("<canvas>", {
       id: "canvas",
-      style: "border: 1px solid black"
+      style: "border: 1px solid black; touch-action: none"
     })
       .attr("width", parameters.photoWidth)
       .attr("height", parameters.photoHeight)
-      .mousedown(handleMouseDown)
-      .mousemove(handleMouseMove)
-      .mouseup(handleMouseUp);
+      .on('mousedown', handleMouseDown)
+      .on('touchstart', handleMouseDown);
+
+    $(document).on('mousemove', handleMouseMove)
+      .on('touchmove', handleMouseMove)
+      .on('touchend', handleMouseUp)
+        .on('mouseup', handleMouseUp);
 
     canvasOffset = canvas.offset();
     mouseEvents.offsetX = canvasOffset.left;
@@ -364,13 +368,20 @@
   }
 
   function startVideo() {
+    $("#photoOr").show();
+    $("#photoCapture").show();
+    // Grab elements, create settings, etc.
+    this.video = document.getElementById('video');
+
+    if(parameters.fakeVideo) {
+      this.video.src = 'http://vjs.zencdn.net/v/oceans.mp4';
+      this.video.play();
+      return;
+    }
+
     // Get access to the camera!
     navigator.mediaDevices.getUserMedia(camera.constraints)
       .then(function (userCameraStream) {
-        $("#photoOr").show();
-        $("#photoCapture").show();
-        // Grab elements, create settings, etc.
-        this.video = document.getElementById('video');
         this.stream = userCameraStream;
         this.video.src = window.URL.createObjectURL(userCameraStream);
         this.video.play();
@@ -454,22 +465,44 @@
     mouseEvents.isDragging = 0;
   }
 
+  function getInput(e) {
+    var input = {
+      clientX: e.clientX,
+      clientY: e.clientY
+    };
+    if(e.type === 'touchstart' || e.type ==='touchmove') {
+      var touch = null;
+      if(!e.touches) {
+        touch = e.originalEvent.touches[0];
+      } else {
+        touch = e.touches[0];
+      }
+
+      input.clientX = touch.clientX;
+      input.clientY = touch.clientY;
+    }
+
+    return input;
+  }
+
   function handleMouseDown(e) {
+    var input = getInput(e);
     mouseEvents.isDragging = 1;
-    mouseEvents.startX = parseInt(e.clientX - mouseEvents.offsetX);
-    mouseEvents.startY = parseInt(e.clientY - mouseEvents.offsetY);
+    mouseEvents.startX = parseInt(input.clientX - mouseEvents.offsetX);
+    mouseEvents.startY = parseInt(input.clientY - mouseEvents.offsetY);
   }
 
   function handleMouseMove(e) {
+    var input = getInput(e);
     if (mouseEvents.isDragging) {
-      dX = parseInt(e.clientX) - mouseEvents.startX - mouseEvents.offsetX;
-      dY = parseInt(e.clientY) - mouseEvents.startY - mouseEvents.offsetY;
+      dX = parseInt(input.clientX) - mouseEvents.startX - mouseEvents.offsetX;
+      dY = parseInt(input.clientY) - mouseEvents.startY - mouseEvents.offsetY;
       currentImage.top += dY;
       currentImage.bottom += dY;
       currentImage.left += dX;
       currentImage.right += dX;
-      mouseEvents.startX = parseInt(e.clientX);
-      mouseEvents.startY = parseInt(e.clientY);
+      mouseEvents.startX = parseInt(input.clientX);
+      mouseEvents.startY = parseInt(input.clientY);
       updateCanvas();
     }
   }
@@ -490,7 +523,8 @@
 
   function updateCanvas() {
     context.clearRect(0, 0, parameters.photoWidth, parameters.photoHeight);
-    context.drawImage(currentImage.image, currentImage.left, currentImage.top, currentImage.width, currentImage.height);
+    context.drawImage(currentImage.image, currentImage.left, currentImage.top,
+      currentImage.width, currentImage.height);
     context.beginPath();
     context.moveTo(currentImage.left, currentImage.top);
     context.lineTo(currentImage.right, currentImage.top);
@@ -503,7 +537,8 @@
 
 
   function canCapture() {
-    return navigator.mediaDevices && navigator.mediaDevices.getUserMedia && window.location.protocol == "https:"
+    return navigator.mediaDevices && navigator.mediaDevices.getUserMedia &&
+      window.location.protocol == "https:"
   }
 
   $.fn.PhotoUploader.defaultParameters = {
