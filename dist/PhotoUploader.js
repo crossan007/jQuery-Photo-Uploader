@@ -3,6 +3,7 @@
   var parameters = {};
   var canvas = {};
   var context = {};
+  var inputCache = [];
 
   var camera = {
     deviceIds: [],
@@ -29,7 +30,8 @@
     offsetY: 0,
     startX: 0,
     startY: 0,
-    isDragging: 0
+    isDragging: false,
+    prevDiff: 0
   };
 
   $.fn.PhotoUploader = function (userParameters) {
@@ -46,7 +48,7 @@
     $(document).on('mousemove', handleMouseMove)
       .on('touchmove', handleMouseMove)
       .on('touchend', handleMouseUp)
-        .on('mouseup', handleMouseUp);
+      .on('mouseup', handleMouseUp);
 
     canvasOffset = canvas.offset();
     mouseEvents.offsetX = canvasOffset.left;
@@ -373,7 +375,7 @@
     // Grab elements, create settings, etc.
     this.video = document.getElementById('video');
 
-    if(parameters.fakeVideo) {
+    if (parameters.fakeVideo) {
       this.video.src = 'http://vjs.zencdn.net/v/oceans.mp4';
       this.video.play();
       return;
@@ -461,49 +463,107 @@
     }
   }
 
-  function handleMouseUp(e) {
-    mouseEvents.isDragging = 0;
-  }
-
   function getInput(e) {
-    var input = {
-      clientX: e.clientX,
-      clientY: e.clientY
-    };
-    if(e.type === 'touchstart' || e.type ==='touchmove') {
-      var touch = null;
-      if(!e.touches) {
-        touch = e.originalEvent.touches[0];
+    if (e.type === 'touchstart' || e.type === 'touchmove') {
+      var touches = [];
+      if (!e.touches) {
+        touches = e.originalEvent.touches;
+
       } else {
-        touch = e.touches[0];
+        touches = e.touches;
       }
 
-      input.clientX = touch.clientX;
-      input.clientY = touch.clientY;
+      inputCache = [];
+      for (var i = 0; i < touches.length; i++) {
+        inputCache.push({
+          clientX: touches[i].clientX,
+          clientY: touches[i].clientY,
+          identifier: touches[i].identifier
+        });
+      }
+
+      if(inputCache.length == 2) {
+        // Calculate the distance between the two pointers
+        var diffX = inputCache[0].clientX - inputCache[1].clientX;
+        var diffY = inputCache[0].clientY - inputCache[1].clientY;
+
+        // Pythagorean theorem
+        mouseEvents.distance = Math.sqrt(diffX * diffX + diffY * diffY);
+
+        if(mouseEvents.isDragging) {
+          mouseEvents.prevDistance = mouseEvents.distance;
+        }
+      }
+    } else {
+      if (e.type === 'mousedown') {
+        inputCache.push({
+          clientX: e.clientX,
+          clientY: e.clientY,
+          identifier: 0
+        });
+      } else if (mouseEvents.isDragging) {
+        inputCache[0].clientX = e.clientX;
+        inputCache[0].clientY = e.clientY;
+        inputCache[0].identifier = 0;
+      }
     }
 
-    return input;
+  }
+
+  function removeInput(e) {
+    if (e.type === 'mouseup') {
+      inputCache = [];
+    }
+    // Remove this event from the target's cache
+    for (var i = 0; i < inputCache.length; i++) {
+      if (inputCache[i].pointerId == e.pointerId) {
+        inputCache.splice(i, 1);
+        break;
+      }
+    }
+  }
+
+  function handleMouseUp(e) {
+    removeInput(e);
+    mouseEvents.isDragging = inputCache.length === 1;
   }
 
   function handleMouseDown(e) {
-    var input = getInput(e);
-    mouseEvents.isDragging = 1;
-    mouseEvents.startX = parseInt(input.clientX - mouseEvents.offsetX);
-    mouseEvents.startY = parseInt(input.clientY - mouseEvents.offsetY);
+    getInput(e);
+    mouseEvents.isDragging = inputCache.length === 1;
+
+    if (mouseEvents.isDragging) {
+      mouseEvents.startX = parseInt(inputCache[0].clientX - mouseEvents.offsetX);
+      mouseEvents.startY = parseInt(inputCache[0].clientY - mouseEvents.offsetY);
+    }
   }
 
   function handleMouseMove(e) {
-    var input = getInput(e);
+    getInput(e);
     if (mouseEvents.isDragging) {
-      dX = parseInt(input.clientX) - mouseEvents.startX - mouseEvents.offsetX;
-      dY = parseInt(input.clientY) - mouseEvents.startY - mouseEvents.offsetY;
+      dX = parseInt(inputCache[0].clientX) - mouseEvents.startX - mouseEvents.offsetX;
+      dY = parseInt(inputCache[0].clientY) - mouseEvents.startY - mouseEvents.offsetY;
       currentImage.top += dY;
       currentImage.bottom += dY;
       currentImage.left += dX;
       currentImage.right += dX;
-      mouseEvents.startX = parseInt(input.clientX);
-      mouseEvents.startY = parseInt(input.clientY);
+      mouseEvents.startX = parseInt(inputCache[0].clientX);
+      mouseEvents.startY = parseInt(inputCache[0].clientY);
       updateCanvas();
+
+    } else if (inputCache.length == 2) {
+      var scale = mouseEvents.distance / mouseEvents.prevDistance;
+      if (scale > 0) {
+        // The distance between the two pointers has decreased
+        currentImage.width *= scale;
+        currentImage.height *= scale;
+
+        calcEdges();
+        updateCanvas();
+      }
+
+      // Cache the distance for the next move event
+      mouseEvents.prevDistance = mouseEvents.distance;
     }
   }
 
