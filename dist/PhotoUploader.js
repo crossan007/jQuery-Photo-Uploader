@@ -3,6 +3,7 @@
   var parameters = {};
   var canvas = {};
   var context = {};
+  var inputCache = [];
 
   var camera = {
     deviceIds: [],
@@ -29,20 +30,25 @@
     offsetY: 0,
     startX: 0,
     startY: 0,
-    isDragging: 0
+    isDragging: false,
+    prevDiff: 0
   };
 
   $.fn.PhotoUploader = function (userParameters) {
     parameters = $.extend({}, $.fn.PhotoUploader.defaultParameters, userParameters);
     canvas = $("<canvas>", {
       id: "canvas",
-      style: "border: 1px solid black"
+      style: "border: 1px solid black; touch-action: none"
     })
       .attr("width", parameters.photoWidth)
       .attr("height", parameters.photoHeight)
-      .mousedown(handleMouseDown)
-      .mousemove(handleMouseMove)
-      .mouseup(handleMouseUp);
+      .on('mousedown', handleMouseDown)
+      .on('touchstart', handleMouseDown);
+
+    $(document).on('mousemove', handleMouseMove)
+      .on('touchmove', handleMouseMove)
+      .on('touchend', handleMouseUp)
+      .on('mouseup', handleMouseUp);
 
     canvasOffset = canvas.offset();
     mouseEvents.offsetX = canvasOffset.left;
@@ -364,13 +370,20 @@
   }
 
   function startVideo() {
+    $("#photoOr").show();
+    $("#photoCapture").show();
+    // Grab elements, create settings, etc.
+    this.video = document.getElementById('video');
+
+    if (parameters.fakeVideo) {
+      this.video.src = 'http://vjs.zencdn.net/v/oceans.mp4';
+      this.video.play();
+      return;
+    }
+
     // Get access to the camera!
     navigator.mediaDevices.getUserMedia(camera.constraints)
       .then(function (userCameraStream) {
-        $("#photoOr").show();
-        $("#photoCapture").show();
-        // Grab elements, create settings, etc.
-        this.video = document.getElementById('video');
         this.stream = userCameraStream;
         this.video.src = window.URL.createObjectURL(userCameraStream);
         this.video.play();
@@ -450,27 +463,107 @@
     }
   }
 
+  function getInput(e) {
+    if (e.type === 'touchstart' || e.type === 'touchmove') {
+      var touches = [];
+      if (!e.touches) {
+        touches = e.originalEvent.touches;
+
+      } else {
+        touches = e.touches;
+      }
+
+      inputCache = [];
+      for (var i = 0; i < touches.length; i++) {
+        inputCache.push({
+          clientX: touches[i].clientX,
+          clientY: touches[i].clientY,
+          identifier: touches[i].identifier
+        });
+      }
+
+      if(inputCache.length == 2) {
+        // Calculate the distance between the two pointers
+        var diffX = inputCache[0].clientX - inputCache[1].clientX;
+        var diffY = inputCache[0].clientY - inputCache[1].clientY;
+
+        // Pythagorean theorem
+        mouseEvents.distance = Math.sqrt(diffX * diffX + diffY * diffY);
+
+        if(mouseEvents.isDragging) {
+          mouseEvents.prevDistance = mouseEvents.distance;
+        }
+      }
+    } else {
+      if (e.type === 'mousedown') {
+        inputCache.push({
+          clientX: e.clientX,
+          clientY: e.clientY,
+          identifier: 0
+        });
+      } else if (mouseEvents.isDragging) {
+        inputCache[0].clientX = e.clientX;
+        inputCache[0].clientY = e.clientY;
+        inputCache[0].identifier = 0;
+      }
+    }
+
+  }
+
+  function removeInput(e) {
+    if (e.type === 'mouseup') {
+      inputCache = [];
+    }
+    // Remove this event from the target's cache
+    for (var i = 0; i < inputCache.length; i++) {
+      if (inputCache[i].pointerId == e.pointerId) {
+        inputCache.splice(i, 1);
+        break;
+      }
+    }
+  }
+
   function handleMouseUp(e) {
-    mouseEvents.isDragging = 0;
+    removeInput(e);
+    mouseEvents.isDragging = inputCache.length === 1;
   }
 
   function handleMouseDown(e) {
-    mouseEvents.isDragging = 1;
-    mouseEvents.startX = parseInt(e.clientX - mouseEvents.offsetX);
-    mouseEvents.startY = parseInt(e.clientY - mouseEvents.offsetY);
+    getInput(e);
+    mouseEvents.isDragging = inputCache.length === 1;
+
+    if (mouseEvents.isDragging) {
+      mouseEvents.startX = parseInt(inputCache[0].clientX - mouseEvents.offsetX);
+      mouseEvents.startY = parseInt(inputCache[0].clientY - mouseEvents.offsetY);
+    }
   }
 
   function handleMouseMove(e) {
+    getInput(e);
     if (mouseEvents.isDragging) {
-      dX = parseInt(e.clientX) - mouseEvents.startX - mouseEvents.offsetX;
-      dY = parseInt(e.clientY) - mouseEvents.startY - mouseEvents.offsetY;
+      dX = parseInt(inputCache[0].clientX) - mouseEvents.startX - mouseEvents.offsetX;
+      dY = parseInt(inputCache[0].clientY) - mouseEvents.startY - mouseEvents.offsetY;
       currentImage.top += dY;
       currentImage.bottom += dY;
       currentImage.left += dX;
       currentImage.right += dX;
-      mouseEvents.startX = parseInt(e.clientX);
-      mouseEvents.startY = parseInt(e.clientY);
+      mouseEvents.startX = parseInt(inputCache[0].clientX);
+      mouseEvents.startY = parseInt(inputCache[0].clientY);
       updateCanvas();
+
+    } else if (inputCache.length == 2) {
+      var scale = mouseEvents.distance / mouseEvents.prevDistance;
+      if (scale > 0) {
+        // The distance between the two pointers has decreased
+        currentImage.width *= scale;
+        currentImage.height *= scale;
+
+        calcEdges();
+        updateCanvas();
+      }
+
+      // Cache the distance for the next move event
+      mouseEvents.prevDistance = mouseEvents.distance;
     }
   }
 
@@ -490,7 +583,8 @@
 
   function updateCanvas() {
     context.clearRect(0, 0, parameters.photoWidth, parameters.photoHeight);
-    context.drawImage(currentImage.image, currentImage.left, currentImage.top, currentImage.width, currentImage.height);
+    context.drawImage(currentImage.image, currentImage.left, currentImage.top,
+      currentImage.width, currentImage.height);
     context.beginPath();
     context.moveTo(currentImage.left, currentImage.top);
     context.lineTo(currentImage.right, currentImage.top);
@@ -503,7 +597,8 @@
 
 
   function canCapture() {
-    return navigator.mediaDevices && navigator.mediaDevices.getUserMedia && window.location.protocol == "https:"
+    return navigator.mediaDevices && navigator.mediaDevices.getUserMedia &&
+      window.location.protocol == "https:"
   }
 
   $.fn.PhotoUploader.defaultParameters = {
