@@ -10,7 +10,8 @@
     constraints: {
       video: {
         width: parameters.photoWidth,
-        height: parameters.photoHeight
+        height: parameters.photoHeight,
+        frameRate: { ideal: 10, max: 10 }
       }
     }
   };
