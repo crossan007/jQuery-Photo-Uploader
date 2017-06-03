@@ -153,6 +153,10 @@
   }
 
   function createCapturePane() {
+    if (!canCapture())
+    {
+      return null;
+    }
     var capture = $("<div>", {
       class: "row",
       id: "capturePane",
@@ -598,8 +602,7 @@
 
 
   function canCapture() {
-    return navigator.mediaDevices && navigator.mediaDevices.getUserMedia &&
-      window.location.protocol == "https:"
+    return navigator.mediaDevices && navigator.mediaDevices.enumerateDevices && navigator.mediaDevices.getUserMedia && window.location.protocol == "https:"
   }
 
   $.fn.PhotoUploader.defaultParameters = {
